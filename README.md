@@ -1,3 +1,7 @@
+# Fork with support of Export/Import functionality
+
+Base repository info follows:
+
 # YouTrack Quick Filters
 
 [![Chrome Web Store](https://img.shields.io/chrome-web-store/v/iaddgmcajdiblafjfhloadmphkbplddo.svg)](https://chromewebstore.google.com/detail/iaddgmcajdiblafjfhloadmphkbplddo)
