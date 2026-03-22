@@ -1,5 +1,7 @@
 /* Import all component styles */
 @import './components/FilterBar.css';
 @import './components/ContextMenu.css';
+@import './components/OptionsMenu.css';
 @import './components/FilterModal.css';
+@import './components/FiltersTransferModal.css';
 @import './components/DaysInStatusTags.css';

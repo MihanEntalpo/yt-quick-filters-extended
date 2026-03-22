@@ -7,7 +7,7 @@ export class DaysInStatusUI {
   private static instance: DaysInStatusUI;
   private observer: MutationObserver | null = null;
   private mountedComponents: Map<string, { root: any; element: HTMLElement }> = new Map();
-  private isEnabled: boolean = true;
+  private isEnabled: boolean = false;
 
   public static getInstance(): DaysInStatusUI {
     if (!DaysInStatusUI.instance) {
@@ -20,10 +20,7 @@ export class DaysInStatusUI {
     // Initialize the service
     const service = DaysInStatusAPI.getInstance();
     await service.initialize();
-    
-    // Initial scan
-    this.scanAndAddDaysInStatus();
-    
+
     // Watch for DOM changes
     this.observer = new MutationObserver(() => {
       this.scanAndAddDaysInStatus();
@@ -33,6 +30,10 @@ export class DaysInStatusUI {
       childList: true,
       subtree: true
     });
+
+    if (this.isEnabled) {
+      this.scanAndAddDaysInStatus();
+    }
   }
 
   public stop(): void {

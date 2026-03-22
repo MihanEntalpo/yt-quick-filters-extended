@@ -31,7 +31,7 @@ const initializeSettingsMessageBridge = (): void => {
 };
 
 class ContentScript {
-  private observer: MutationObserver | null = null;
+  private intervalId: number | null = null;
   private root: any = null;
 
   private inject(): void {
@@ -70,15 +70,10 @@ class ContentScript {
     // Initial injection
     this.inject();
 
-    // Watch for DOM changes (for SPA navigation)
-    this.observer = new MutationObserver(() => {
+    // Re-check periodically for SPA navigation or full top-level remounts.
+    this.intervalId = window.setInterval(() => {
       this.inject();
-    });
-
-    this.observer.observe(document.documentElement, {
-      childList: true,
-      subtree: true
-    });
+    }, 1000);
   }
 }
 

@@ -8,6 +8,8 @@ import { useQueryParams } from '../hooks/useQueryParams';
 import { FilterBar } from './FilterBar';
 import { FilterModal } from './FilterModal';
 import { ContextMenu } from './ContextMenu';
+import { OptionsMenu } from './OptionsMenu';
+import { FiltersTransferModal } from './FiltersTransferModal';
 import { DaysInStatusUI } from '../services/daysInStatusUI';
 
 interface ContextMenuState {
@@ -26,6 +28,20 @@ interface ModalState {
   index?: number;
 }
 
+interface OptionsMenuState {
+  isOpen: boolean;
+  x: number;
+  y: number;
+}
+
+interface TransferModalState {
+  isOpen: boolean;
+  mode: 'export' | 'import';
+  jsonValue: string;
+  merge: boolean;
+  error: string;
+}
+
 export const QuickFiltersApp: React.FC = () => {
   const [filters, setFilters] = useState<Filter[]>([]);
   const [contextMenu, setContextMenu] = useState<ContextMenuState>({
@@ -39,6 +55,18 @@ export const QuickFiltersApp: React.FC = () => {
     isOpen: false,
     isEdit: false
   });
+  const [optionsMenu, setOptionsMenu] = useState<OptionsMenuState>({
+    isOpen: false,
+    x: 0,
+    y: 0
+  });
+  const [transferModal, setTransferModal] = useState<TransferModalState>({
+    isOpen: false,
+    mode: 'export',
+    jsonValue: '',
+    merge: true,
+    error: ''
+  });
 
   const storageService = StorageService.getInstance();
   const utilsService = UtilsService.getInstance();
@@ -49,8 +77,7 @@ export const QuickFiltersApp: React.FC = () => {
   const [portalTarget, setPortalTarget] = useState<Element | null>(null);
 
   // Use custom hook for working with query parameters
-  const { getParam, pathname } = useQueryParams();
-  const currentQuery = getParam('query') || '';
+  const { query: currentQuery, pathname } = useQueryParams();
 
   const loadFilters = useCallback(async () => {
     try {
@@ -64,32 +91,34 @@ export const QuickFiltersApp: React.FC = () => {
 
   // Effect to find the target elements for the portals
   useEffect(() => {
-    const findTargetElements = () => {
+    const updatePortalTarget = () => {
       const filterTarget = versionService.getTargetElement();
-      return { filterTarget };
+      if (filterTarget) {
+        setPortalTarget((previousTarget) => previousTarget === filterTarget ? previousTarget : filterTarget);
+        return true;
+      }
+
+      return false;
     };
 
-    // Try immediately first
-    const { filterTarget } = findTargetElements();
-    if (filterTarget) {
-      setPortalTarget(filterTarget);
+    let attempts = 0;
+    const maxAttempts = 20;
+
+    if (updatePortalTarget()) {
+      return;
     }
 
-    // Keep observing DOM changes to reattach after SPA navigation
-    const observer = new MutationObserver(() => {
-      const { filterTarget } = findTargetElements();
-      if (filterTarget) {
-        setPortalTarget(filterTarget);
+    const intervalId = window.setInterval(() => {
+      attempts += 1;
+      const found = updatePortalTarget();
+
+      if (found || attempts >= maxAttempts) {
+        window.clearInterval(intervalId);
       }
-    });
+    }, 500);
 
-    observer.observe(document.body, {
-      childList: true,
-      subtree: true
-    });
-
-    return () => observer.disconnect();
-  }, [versionService]);
+    return () => window.clearInterval(intervalId);
+  }, [pathname, versionService]);
 
   // Reload filters when pathname changes (board change)
   useEffect(() => {
@@ -110,30 +139,19 @@ export const QuickFiltersApp: React.FC = () => {
   }, [daysInStatusUI]);
 
   const handleFilterClick = useCallback((query: string) => {
-    // If clicked on already active filter, deactivate it (toggle)
-    if (utilsService.normalizeQuery(currentQuery) === utilsService.normalizeQuery(query)) {
-      utilsService.setQuery('');
-    } else {
-      utilsService.setQuery(query);
-    }
+    const nextQuery = utilsService.toggleFilterInQuery(currentQuery, query);
+    void utilsService.setQuery(nextQuery);
   }, [utilsService, currentQuery]);
 
   const handleAddFilter = useCallback(() => {
+    setOptionsMenu({
+      isOpen: false,
+      x: 0,
+      y: 0
+    });
     setModal({
       isOpen: true,
       isEdit: false
-    });
-  }, []);
-
-  const handleContextMenu = useCallback((e: React.MouseEvent, item: Filter, index: number) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setContextMenu({
-      isOpen: true,
-      x: e.clientX,
-      y: e.clientY,
-      item,
-      index
     });
   }, []);
 
@@ -146,6 +164,40 @@ export const QuickFiltersApp: React.FC = () => {
       index: -1
     });
   }, []);
+
+  const closeOptionsMenu = useCallback(() => {
+    setOptionsMenu({
+      isOpen: false,
+      x: 0,
+      y: 0
+    });
+  }, []);
+
+  const handleOptionsClick = useCallback((e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
+
+    closeContextMenu();
+    setOptionsMenu((prev) => ({
+      isOpen: !prev.isOpen,
+      x: rect.left,
+      y: rect.bottom + 4
+    }));
+  }, [closeContextMenu]);
+
+  const handleContextMenu = useCallback((e: React.MouseEvent, item: Filter, index: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    closeOptionsMenu();
+    setContextMenu({
+      isOpen: true,
+      x: e.clientX,
+      y: e.clientY,
+      item,
+      index
+    });
+  }, [closeOptionsMenu]);
 
   const handleEditFilter = useCallback((item: Filter, index: number) => {
     closeContextMenu();
@@ -185,6 +237,14 @@ export const QuickFiltersApp: React.FC = () => {
     });
   }, []);
 
+  const handleTransferModalClose = useCallback(() => {
+    setTransferModal((prev) => ({
+      ...prev,
+      isOpen: false,
+      error: ''
+    }));
+  }, []);
+
   const handleModalSave = useCallback(async (name: string, query: string, index?: number) => {
     try {
       if (modal.isEdit && typeof index === 'number') {
@@ -199,9 +259,70 @@ export const QuickFiltersApp: React.FC = () => {
     }
   }, [modal.isEdit, storageService, loadFilters, handleModalClose]);
 
+  const handleOpenExport = useCallback(() => {
+    closeOptionsMenu();
+    setTransferModal({
+      isOpen: true,
+      mode: 'export',
+      jsonValue: JSON.stringify(filters, null, 2),
+      merge: true,
+      error: ''
+    });
+  }, [closeOptionsMenu, filters]);
+
+  const handleOpenImport = useCallback(() => {
+    closeOptionsMenu();
+    setTransferModal({
+      isOpen: true,
+      mode: 'import',
+      jsonValue: '',
+      merge: true,
+      error: ''
+    });
+  }, [closeOptionsMenu]);
+
+  const handleTransferJsonChange = useCallback((value: string) => {
+    setTransferModal((prev) => ({
+      ...prev,
+      jsonValue: value,
+      error: ''
+    }));
+  }, []);
+
+  const handleTransferMergeChange = useCallback((value: boolean) => {
+    setTransferModal((prev) => ({
+      ...prev,
+      merge: value,
+      error: ''
+    }));
+  }, []);
+
+  const handleImportFilters = useCallback(async () => {
+    try {
+      const importedFilters = storageService.parseImportedFilters(transferModal.jsonValue);
+      const confirmationMessage = transferModal.merge
+        ? 'Are you sure you want to merge these filters?\n\nExisting filters with matching names will be updated, new filters will be added, and current filters missing from the import will stay unchanged.'
+        : 'Are you sure you want to replace all current filters with the imported filters?\n\nThis will remove any current filters that are not present in the import.';
+
+      if (!window.confirm(confirmationMessage)) {
+        return;
+      }
+
+      await storageService.importFilters(importedFilters, transferModal.merge);
+      await loadFilters();
+      handleTransferModalClose();
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to import filters.';
+      setTransferModal((prev) => ({
+        ...prev,
+        error: message
+      }));
+    }
+  }, [handleTransferModalClose, loadFilters, storageService, transferModal.jsonValue, transferModal.merge]);
+
 
   // Determine active filter based on current query
-  const activeFilter = utilsService.findActiveFilter(filters, currentQuery);
+  const activeFilterIndices = utilsService.getActiveFilterIndices(filters, currentQuery);
 
   return (
     <>
@@ -210,9 +331,10 @@ export const QuickFiltersApp: React.FC = () => {
         ReactDOM.createPortal(
           <FilterBar
             filters={filters}
-            activeFilter={activeFilter}
+            activeFilterIndices={activeFilterIndices}
             onFilterClick={handleFilterClick}
             onAddFilter={handleAddFilter}
+            onOptionsClick={handleOptionsClick}
             onContextMenu={handleContextMenu}
           />,
           portalTarget
@@ -220,9 +342,10 @@ export const QuickFiltersApp: React.FC = () => {
       ) : (
         <FilterBar
           filters={filters}
-          activeFilter={activeFilter}
+          activeFilterIndices={activeFilterIndices}
           onFilterClick={handleFilterClick}
           onAddFilter={handleAddFilter}
+          onOptionsClick={handleOptionsClick}
           onContextMenu={handleContextMenu}
         />
       )}
@@ -243,6 +366,19 @@ export const QuickFiltersApp: React.FC = () => {
           document.body
         )
       }
+
+      {optionsMenu.isOpen &&
+        ReactDOM.createPortal(
+          <OptionsMenu
+            x={optionsMenu.x}
+            y={optionsMenu.y}
+            onExport={handleOpenExport}
+            onImport={handleOpenImport}
+            onClose={closeOptionsMenu}
+          />,
+          document.body
+        )
+      }
       
       {modal.isOpen && 
         ReactDOM.createPortal(
@@ -254,6 +390,23 @@ export const QuickFiltersApp: React.FC = () => {
             index={modal.index}
             onClose={handleModalClose}
             onSave={handleModalSave}
+          />,
+          document.body
+        )
+      }
+
+      {transferModal.isOpen &&
+        ReactDOM.createPortal(
+          <FiltersTransferModal
+            isOpen={transferModal.isOpen}
+            mode={transferModal.mode}
+            jsonValue={transferModal.jsonValue}
+            merge={transferModal.merge}
+            error={transferModal.error}
+            onJsonChange={handleTransferJsonChange}
+            onMergeChange={handleTransferMergeChange}
+            onClose={handleTransferModalClose}
+            onImport={handleImportFilters}
           />,
           document.body
         )

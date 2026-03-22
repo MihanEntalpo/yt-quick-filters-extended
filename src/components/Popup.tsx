@@ -5,8 +5,8 @@ import manifest from '../../manifest.json';
 import './Popup.css';
 
 const VERSION = manifest.version;
-const GITHUB_ISSUES_URL = 'https://github.com/ausievich/yt-quick-filters/issues';
-const CHROME_WEB_STORE_REVIEWS_URL = 'https://chromewebstore.google.com/detail/youtrack-quick-filters/iaddgmcajdiblafjfhloadmphkbplddo/reviews';
+const GITHUB_ISSUES_URL = 'https://github.com/MihanEntalpo/yt-quick-filters-extended/issues';
+const CHROME_WEB_STORE_REVIEWS_URL = 'https://chromewebstore.google.com/detail/youtrack-quick-filters-extended/.../reviews';
 
 const Popup: React.FC = () => {
   const [showCreated, setShowCreated] = useState<boolean>(true);

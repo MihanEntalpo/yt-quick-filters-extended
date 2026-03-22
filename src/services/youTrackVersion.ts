@@ -13,70 +13,87 @@ export class YouTrackVersionService {
 
   /**
    * Find toolbar element for mounting filters
-   * First tries new YouTrack version, then falls back to old version
+   * Prefer the dedicated agile toolbar when present.
+   * Fall back to the top bar only when no separate toolbar exists.
    */
   public getTargetElement(): Element | null {
-    // Check for fallback test flag
     const forceFallback = localStorage.getItem('ytqf-force-fallback') === 'true';
-    
+
     if (forceFallback) {
-      return this.findOldVersionTarget();
+      return this.findToolbarTarget();
     }
 
-    // Try new YouTrack version first
-    const newTarget = this.findNewVersionTarget();
-    if (newTarget) {
-      return newTarget;
+    const toolbarTarget = this.findToolbarTarget();
+    if (toolbarTarget) {
+      return toolbarTarget;
     }
 
-    // Fallback to old YouTrack version
-    return this.findOldVersionTarget();
+    return this.findTopBarTarget();
   }
 
-  private findNewVersionTarget(): Element | null {
+  private findTopBarTarget(): Element | null {
     const topBar = document.querySelector('div.yt-agile-board__top-bar');
     if (topBar) {
       const searchPanel = topBar.querySelector('search-query-panel');
       if (searchPanel) {
-        let filterContainer = topBar.querySelector('#ytqf-filter-container');
-        if (!filterContainer) {
-          filterContainer = document.createElement('div');
-          filterContainer.id = 'ytqf-filter-container';
-          (filterContainer as HTMLElement).style.cssText = 'display: inline-flex; align-items: center; margin-left: 16px;';
-          topBar.insertBefore(filterContainer, searchPanel);
+        const filterContainer = this.getOrCreateFilterContainer();
+        const topBarElement = topBar as HTMLElement;
+
+        topBarElement.style.flexWrap = 'wrap';
+        topBarElement.style.rowGap = '8px';
+
+        filterContainer.style.cssText = 'display: flex; align-items: center; width: 100%; margin: 8px 0 0; min-width: 0;';
+
+        if (filterContainer.parentElement !== topBar || searchPanel.nextElementSibling !== filterContainer) {
+          topBar.insertBefore(filterContainer, searchPanel.nextSibling);
         }
+
         return filterContainer;
       }
     }
+
     return null;
   }
 
-  private findOldVersionTarget(): Element | null {
+  private findToolbarTarget(): Element | null {
     const toolbar = this.findToolbar();
     if (toolbar) {
-      // For fallback mode, create the filter container (like in working version)
-      let filterContainer = toolbar.querySelector('#ytqf-filter-container');
-      if (!filterContainer) {
-        filterContainer = document.createElement('div');
-        filterContainer.id = 'ytqf-filter-container';
-        (filterContainer as HTMLElement).style.cssText = 'display: inline-flex; align-items: center;'; // Add basic flex styles if needed, or rely on CSS
-        
-        // Find the ng-transclude element to insert before it
-        const buttonToolbar = toolbar.querySelector('ng-transclude[rg-button-toolbar]');
-        if (buttonToolbar && buttonToolbar.parentNode === toolbar) {
-          toolbar.insertBefore(filterContainer, buttonToolbar);
-        } else {
-          toolbar.insertBefore(filterContainer, toolbar.firstChild);
-        }
+      const filterContainer = this.getOrCreateFilterContainer();
+      filterContainer.style.cssText = 'display: inline-flex; align-items: center;';
+
+      const buttonToolbar = toolbar.querySelector('ng-transclude[rg-button-toolbar]');
+      const referenceElement = buttonToolbar && buttonToolbar.parentElement === toolbar
+        ? buttonToolbar
+        : toolbar.firstElementChild;
+
+      const isAlreadyPositioned = referenceElement
+        ? filterContainer.parentElement === toolbar && filterContainer.nextElementSibling === referenceElement
+        : filterContainer.parentElement === toolbar && toolbar.lastElementChild === filterContainer;
+
+      if (!isAlreadyPositioned) {
+        toolbar.insertBefore(filterContainer, referenceElement);
       }
+
       return filterContainer;
     }
+
     return null;
   }
 
   public findToolbar(): Element | null {
     return document.querySelector('.yt-agile-board__toolbar[data-test="yt-agile-board-toolbar"]') ||
            document.querySelector('.yt-agile-board__toolbar');
+  }
+
+  private getOrCreateFilterContainer(): HTMLDivElement {
+    let filterContainer = document.getElementById('ytqf-filter-container') as HTMLDivElement | null;
+
+    if (!filterContainer) {
+      filterContainer = document.createElement('div');
+      filterContainer.id = 'ytqf-filter-container';
+    }
+
+    return filterContainer;
   }
 
 }

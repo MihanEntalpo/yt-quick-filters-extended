@@ -35,7 +35,8 @@ export class StorageService {
     const { storageKey } = this.getBoardInfo();
     return new Promise((resolve) => {
       chrome.storage.sync.get(storageKey, (data: StorageData) => {
-        resolve(data[storageKey] || DEFAULT_FILTERS);
+        const storedFilters = data[storageKey];
+        resolve(Array.isArray(storedFilters) ? storedFilters : DEFAULT_FILTERS);
       });
     });
   }
@@ -46,6 +47,65 @@ export class StorageService {
     return new Promise((resolve) => {
       chrome.storage.sync.set({ [storageKey]: filters }, resolve);
     });
+  }
+
+  public parseImportedFilters(json: string): Filter[] {
+    let parsed: unknown;
+
+    try {
+      parsed = JSON.parse(json);
+    } catch {
+      throw new Error('Invalid JSON. Paste a JSON array of filters.');
+    }
+
+    if (!Array.isArray(parsed)) {
+      throw new Error('Imported data must be a JSON array of filters.');
+    }
+
+    return parsed.map((item, index) => {
+      if (!item || typeof item !== 'object') {
+        throw new Error(`Filter ${index + 1} must be an object.`);
+      }
+
+      const { label, query } = item as Partial<Filter>;
+
+      if (typeof label !== 'string' || label.trim() === '') {
+        throw new Error(`Filter ${index + 1} has an invalid label.`);
+      }
+
+      if (typeof query !== 'string' || query.trim() === '') {
+        throw new Error(`Filter ${index + 1} has an invalid query.`);
+      }
+
+      return {
+        label: label.trim(),
+        query: query.trim()
+      };
+    });
+  }
+
+  public async importFilters(filters: Filter[], merge: boolean): Promise<void> {
+    if (!merge) {
+      await this.saveFilters(filters);
+      return;
+    }
+
+    const existingFilters = await this.getFilters();
+    const importedByLabel = new Map(filters.map((filter) => [filter.label, filter]));
+    const mergedFilters = existingFilters.map((filter) => {
+      const importedFilter = importedByLabel.get(filter.label);
+      return importedFilter ? importedFilter : filter;
+    });
+    const existingLabels = new Set(existingFilters.map((filter) => filter.label));
+
+    for (const filter of filters) {
+      if (!existingLabels.has(filter.label)) {
+        mergedFilters.push(filter);
+        existingLabels.add(filter.label);
+      }
+    }
+
+    await this.saveFilters(mergedFilters);
   }
 
   public async getDaysInStatusEnabled(): Promise<boolean> {
