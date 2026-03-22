@@ -107,14 +107,6 @@ Please try to keep code style consistent and test your changes locally before PR
 
 ---
 
-## Support
-
-If you want to support the original project, you can do it here:
-
-[![GitHub Sponsors](https://img.shields.io/badge/Sponsor-GitHub-blue?logo=github-sponsors)](https://github.com/sponsors/ausievich)
-
----
-
 ## 📄 License
 
 MIT
