@@ -16,7 +16,7 @@ Repository: https://github.com/MihanEntalpo/yt-quick-filters-extended
 - Apply filters directly through the YouTrack query UI without reloading the page.
 - Toggle filters on and off inside the current board query using `AND`.
 - Detect which quick filters are already present in the current query and highlight active buttons automatically.
-- Edit, duplicate, or remove filters via a clean UI.
+- Edit, duplicate, move, or remove filters via a clean UI.
 - Export all filters for the current board as JSON.
 - Import filters from JSON in either replace or merge mode.
 - Merge imported filters by name: update existing ones, add missing ones, and keep unrelated current filters.
@@ -47,6 +47,20 @@ This extension brings a long-requested feature (see JetBrains request [JT-38623]
 1. Get the extension from the [Chrome Web Store](https://chromewebstore.google.com/detail/...).
 2. Open any Agile board in YouTrack.
 3. Start adding, combining, exporting, and importing your own quick filters.
+
+## Release notes
+
+1.0.1 Added filters move functionality
+
+* Import no longer messes up with order of filters
+* Added Move Left / Move Right buttons in context filter's context menu
+
+1.0.0 Initial version
+
+* forked from https://github.com/ausievich/yt-quick-filters v2.2.0
+* Added export/import functionality
+* Added support for newest Youtrack UI
+* Gave quick filters an ability to be activated together, joined via "AND" operator and without page reload    
 
 ---
 

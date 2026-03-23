@@ -92,7 +92,7 @@ export class StorageService {
 
     const existingFilters = await this.getFilters();
     const importedByLabel = new Map(filters.map((filter) => [filter.label, filter]));
-    const mergedFilters = existingFilters.map((filter) => {
+    const mergedFilters: Filter[] = existingFilters.map((filter) => {
       const importedFilter = importedByLabel.get(filter.label);
       return importedFilter ? importedFilter : filter;
     });
@@ -101,7 +101,6 @@ export class StorageService {
     for (const filter of filters) {
       if (!existingLabels.has(filter.label)) {
         mergedFilters.push(filter);
-        existingLabels.add(filter.label);
       }
     }
 
@@ -160,6 +159,18 @@ export class StorageService {
       filters.splice(index + 1, 0, newFilter);
       await this.saveFilters(filters);
     }
+  }
+
+  public async moveFilter(index: number, direction: 'left' | 'right'): Promise<void> {
+    const filters = await this.getFilters();
+    const targetIndex = direction === 'left' ? index - 1 : index + 1;
+
+    if (index < 0 || index >= filters.length || targetIndex < 0 || targetIndex >= filters.length) {
+      return;
+    }
+
+    [filters[index], filters[targetIndex]] = [filters[targetIndex], filters[index]];
+    await this.saveFilters(filters);
   }
 
   private generateUniqueLabel(base: string, filters: Filter[]): string {

@@ -220,6 +220,26 @@ export const QuickFiltersApp: React.FC = () => {
     }
   }, [closeContextMenu, storageService, loadFilters]);
 
+  const handleMoveFilterLeft = useCallback(async (index: number) => {
+    closeContextMenu();
+    try {
+      await storageService.moveFilter(index, 'left');
+      await loadFilters();
+    } catch (error) {
+      console.error('Failed to move filter left:', error);
+    }
+  }, [closeContextMenu, storageService, loadFilters]);
+
+  const handleMoveFilterRight = useCallback(async (index: number) => {
+    closeContextMenu();
+    try {
+      await storageService.moveFilter(index, 'right');
+      await loadFilters();
+    } catch (error) {
+      console.error('Failed to move filter right:', error);
+    }
+  }, [closeContextMenu, storageService, loadFilters]);
+
   const handleDeleteFilter = useCallback(async (index: number) => {
     closeContextMenu();
     try {
@@ -360,7 +380,11 @@ export const QuickFiltersApp: React.FC = () => {
             index={contextMenu.index}
             onEdit={handleEditFilter}
             onDuplicate={handleDuplicateFilter}
+            onMoveLeft={handleMoveFilterLeft}
+            onMoveRight={handleMoveFilterRight}
             onDelete={handleDeleteFilter}
+            canMoveLeft={contextMenu.index > 0}
+            canMoveRight={contextMenu.index >= 0 && contextMenu.index < filters.length - 1}
             onClose={closeContextMenu}
           />,
           document.body

@@ -1,6 +1,6 @@
 {
   "name": "yt-quick-filters-extended",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Quick filters, import/export, and days-in-status tags for YouTrack Agile Boards.",
   "scripts": {
     "build": "webpack --mode=production",

@@ -9,7 +9,11 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
   index,
   onEdit,
   onDuplicate,
+  onMoveLeft,
+  onMoveRight,
   onDelete,
+  canMoveLeft,
+  canMoveRight,
   onClose
 }) => {
   const menuRef = useRef<HTMLDivElement>(null);
@@ -88,6 +92,30 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
         }}
       >
         Duplicate
+      </div>
+
+      <div
+        className={`mi ${canMoveLeft ? '' : 'disabled'}`}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (canMoveLeft) {
+            onMoveLeft(index);
+          }
+        }}
+      >
+        Move Left
+      </div>
+
+      <div
+        className={`mi ${canMoveRight ? '' : 'disabled'}`}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (canMoveRight) {
+            onMoveRight(index);
+          }
+        }}
+      >
+        Move Right
       </div>
       
       <div className="sep"></div>

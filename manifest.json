@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "YouTrack Quick Filters Extended",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Quick filters, import/export, and days-in-status tags for YouTrack Agile Boards.",
   "icons": { "128": "icons/logo_128.png" },
   "permissions": ["storage", "tabs"],

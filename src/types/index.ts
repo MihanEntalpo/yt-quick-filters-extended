@@ -21,7 +21,11 @@ export interface ContextMenuProps {
   index: number;
   onEdit: (item: Filter, index: number) => void;
   onDuplicate: (item: Filter, index: number) => void;
+  onMoveLeft: (index: number) => void;
+  onMoveRight: (index: number) => void;
   onDelete: (index: number) => void;
+  canMoveLeft: boolean;
+  canMoveRight: boolean;
   onClose: () => void;
 }
 

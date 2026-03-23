@@ -25,6 +25,15 @@
   background: rgb(235, 246, 255);
 }
 
+#ytqf-menu .mi.disabled {
+  color: rgb(123, 134, 145);
+  cursor: default;
+}
+
+#ytqf-menu .mi.disabled:hover {
+  background: transparent;
+}
+
 #ytqf-menu .danger {
   color: rgb(169, 15, 26);
 }
