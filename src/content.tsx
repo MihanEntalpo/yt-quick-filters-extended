@@ -5,29 +5,49 @@ import { TokenManager } from './services/tokenManager';
 import { DaysInStatusSettingsService } from './services/daysInStatusSettings';
 import './styles.css';
 
-let isSettingsMessageBridgeInitialized = false;
+let isSettingsStorageBridgeInitialized = false;
 
-const initializeSettingsMessageBridge = (): void => {
-  if (isSettingsMessageBridgeInitialized) {
+const initializeSettingsStorageBridge = (): void => {
+  if (isSettingsStorageBridgeInitialized) {
     return;
   }
 
-  chrome.runtime.onMessage.addListener((message: any) => {
-    if (message?.type !== 'UPDATE_DAYS_IN_STATUS_SETTINGS') {
+  chrome.storage.onChanged.addListener((changes, areaName) => {
+    if (areaName !== 'sync') {
+      return;
+    }
+
+    const partial: Record<string, boolean | number> = {};
+
+    if (changes.ytqf_hideCreatedTag) {
+      partial.hideCreated = Boolean(changes.ytqf_hideCreatedTag.newValue);
+    }
+
+    if (changes.ytqf_thresholdYellow) {
+      partial.thresholdYellow = Number(changes.ytqf_thresholdYellow.newValue);
+    }
+
+    if (changes.ytqf_thresholdRed) {
+      partial.thresholdRed = Number(changes.ytqf_thresholdRed.newValue);
+    }
+
+    if (changes.ytqf_compactFormat) {
+      partial.compactFormat = Boolean(changes.ytqf_compactFormat.newValue);
+    }
+
+    if (changes.ytqf_createdTagColored) {
+      partial.createdTagColored = Boolean(changes.ytqf_createdTagColored.newValue);
+    }
+
+    if (Object.keys(partial).length === 0) {
       return;
     }
 
     const settingsService = DaysInStatusSettingsService.getInstance();
-    settingsService.update({
-      hideCreated: message.hideCreated,
-      thresholdYellow: message.thresholdYellow,
-      thresholdRed: message.thresholdRed,
-      compactFormat: message.compactFormat,
-      createdTagColored: message.createdTagColored
-    });
+    settingsService.update(partial);
   });
 
-  isSettingsMessageBridgeInitialized = true;
+  isSettingsStorageBridgeInitialized = true;
 };
 
 class ContentScript {
@@ -50,7 +70,7 @@ class ContentScript {
   }
 
   public async start(): Promise<void> {
-    initializeSettingsMessageBridge();
+    initializeSettingsStorageBridge();
 
     // Prime settings cache once per content script context.
     try {

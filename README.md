@@ -50,12 +50,13 @@ This extension brings a long-requested feature (see JetBrains request [JT-38623]
 
 ## Release notes
 
-1.0.1 Added filters move functionality
+**1.0.1 Added filters move functionality**
 
 * Import no longer messes up with order of filters
 * Added Move Left / Move Right buttons in context filter's context menu
+* removed the `tabs` permission.
 
-1.0.0 Initial version
+**1.0.0 Initial version**
 
 * forked from https://github.com/ausievich/yt-quick-filters v2.2.0
 * Added export/import functionality

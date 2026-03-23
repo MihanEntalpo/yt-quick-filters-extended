@@ -20,23 +20,6 @@ const Popup: React.FC = () => {
 
   const storageService = StorageService.getInstance();
 
-  // Helper function to notify content script about settings changes
-  const notifyContentScript = async (message: any) => {
-    try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      if (!tab?.id) return;
-
-      await chrome.tabs.sendMessage(tab.id, {
-        type: 'UPDATE_DAYS_IN_STATUS_SETTINGS',
-        ...message
-      });
-    } catch (error: unknown) {
-      const msg = error instanceof Error ? error.message : String(error);
-      if (msg.includes('Receiving end does not exist')) return;
-      console.warn('Failed to notify content script:', error);
-    }
-  };
-
   useEffect(() => {
     const loadSettings = async () => {
       try {
@@ -73,14 +56,12 @@ const Popup: React.FC = () => {
     setShowCreated(value);
     // Invert: showCreated = true means hideCreated = false
     await storageService.setHideCreatedTag(!value);
-    await notifyContentScript({ hideCreated: !value });
   };
 
   // Generic handler for threshold input changes
   const createThresholdChangeHandler = (
     setInput: (value: string) => void,
-    saveToStorage: (value: number) => Promise<void>,
-    notifyKey: 'thresholdYellow' | 'thresholdRed'
+    saveToStorage: (value: number) => Promise<void>
   ) => async (e: React.ChangeEvent<HTMLInputElement>) => {
     const newInputValue = e.target.value;
     // Only allow digits, limit to 4 characters maximum
@@ -94,7 +75,6 @@ const Popup: React.FC = () => {
       const value = parseInt(digitsOnly, 10);
       if (digitsOnly !== '' && !isNaN(value) && value > 0) {
         await saveToStorage(value);
-        await notifyContentScript({ [notifyKey]: value });
       }
     }
   };
@@ -105,8 +85,7 @@ const Popup: React.FC = () => {
     lastUserValue: number,
     setInput: (value: string) => void,
     setLastUserValue: (value: number) => void,
-    saveToStorage: (value: number) => Promise<void>,
-    notifyKey: 'thresholdYellow' | 'thresholdRed'
+    saveToStorage: (value: number) => Promise<void>
   ): Promise<void> => {
     const trimmedInput = inputValue.trim();
     
@@ -115,7 +94,6 @@ const Popup: React.FC = () => {
       const valueToRestore = lastUserValue;
       setInput(valueToRestore.toString());
       await saveToStorage(valueToRestore);
-      await notifyContentScript({ [notifyKey]: valueToRestore });
     } else {
       const value = parseInt(trimmedInput, 10);
       if (!isNaN(value) && value > 0) {
@@ -123,13 +101,11 @@ const Popup: React.FC = () => {
         setInput(value.toString());
         setLastUserValue(value);
         await saveToStorage(value);
-        await notifyContentScript({ [notifyKey]: value });
       } else {
         // Invalid value (not a number or <= 0), restore last committed value.
         const valueToRestore = lastUserValue;
         setInput(valueToRestore.toString());
         await saveToStorage(valueToRestore);
-        await notifyContentScript({ [notifyKey]: valueToRestore });
       }
     }
   };
@@ -140,45 +116,39 @@ const Popup: React.FC = () => {
     lastUserValue: number,
     setInput: (value: string) => void,
     setLastUserValue: (value: number) => void,
-    saveToStorage: (value: number) => Promise<void>,
-    notifyKey: 'thresholdYellow' | 'thresholdRed'
+    saveToStorage: (value: number) => Promise<void>
   ) => async () => {
     await commitThresholdValue(
       inputValue,
       lastUserValue,
       setInput,
       setLastUserValue,
-      saveToStorage,
-      notifyKey
+      saveToStorage
     );
   };
 
   const handleThresholdYellowChange = createThresholdChangeHandler(
     setThresholdYellowInput,
-    storageService.setDaysInStatusThresholdYellow.bind(storageService),
-    'thresholdYellow'
+    storageService.setDaysInStatusThresholdYellow.bind(storageService)
   );
   const handleThresholdYellowBlur = createThresholdBlurHandler(
     thresholdYellowInput,
     lastUserYellowValue,
     setThresholdYellowInput,
     setLastUserYellowValue,
-    storageService.setDaysInStatusThresholdYellow.bind(storageService),
-    'thresholdYellow'
+    storageService.setDaysInStatusThresholdYellow.bind(storageService)
   );
 
   const handleThresholdRedChange = createThresholdChangeHandler(
     setThresholdRedInput,
-    storageService.setDaysInStatusThresholdRed.bind(storageService),
-    'thresholdRed'
+    storageService.setDaysInStatusThresholdRed.bind(storageService)
   );
   const handleThresholdRedBlur = createThresholdBlurHandler(
     thresholdRedInput,
     lastUserRedValue,
     setThresholdRedInput,
     setLastUserRedValue,
-    storageService.setDaysInStatusThresholdRed.bind(storageService),
-    'thresholdRed'
+    storageService.setDaysInStatusThresholdRed.bind(storageService)
   );
 
   useEffect(() => {
@@ -189,16 +159,14 @@ const Popup: React.FC = () => {
           lastUserYellowValue,
           setThresholdYellowInput,
           setLastUserYellowValue,
-          storageService.setDaysInStatusThresholdYellow.bind(storageService),
-          'thresholdYellow'
+          storageService.setDaysInStatusThresholdYellow.bind(storageService)
         ),
         commitThresholdValue(
           thresholdRedInput,
           lastUserRedValue,
           setThresholdRedInput,
           setLastUserRedValue,
-          storageService.setDaysInStatusThresholdRed.bind(storageService),
-          'thresholdRed'
+          storageService.setDaysInStatusThresholdRed.bind(storageService)
         )
       ]);
     };
@@ -226,14 +194,12 @@ const Popup: React.FC = () => {
     const value = e.target.checked;
     setCompactFormat(value);
     await storageService.setDaysInStatusCompactFormat(value);
-    await notifyContentScript({ compactFormat: value });
   };
 
   const handleCreatedTagColoredChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.checked;
     setCreatedTagColored(value);
     await storageService.setCreatedTagColored(value);
-    await notifyContentScript({ createdTagColored: value });
   };
 
   if (isLoading) {

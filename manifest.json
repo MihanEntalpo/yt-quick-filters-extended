@@ -4,7 +4,7 @@
   "version": "1.0.1",
   "description": "Quick filters, import/export, and days-in-status tags for YouTrack Agile Boards.",
   "icons": { "128": "icons/logo_128.png" },
-  "permissions": ["storage", "tabs"],
+  "permissions": ["storage"],
   "action": {
     "default_popup": "public/popup.html",
     "default_icon": {
