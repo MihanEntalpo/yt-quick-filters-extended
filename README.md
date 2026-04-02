@@ -4,7 +4,7 @@ Fork of [YouTrack Quick Filters](https://github.com/ausievich/yt-quick-filters) 
 
 Add quick filter buttons to YouTrack Agile Boards. Create filters via a modal, combine them with the current board query, export/import filter sets, and display aging tags on cards.
 
-[Install from Chrome Web Store](https://chromewebstore.google.com/detail/....)
+[Install from Chrome Web Store](https://chromewebstore.google.com/detail/youtrack-quick-filters-ex/linjbghekknkhpibmhkblkodpebdfiki)
 
 Repository: https://github.com/MihanEntalpo/yt-quick-filters-extended
 
@@ -44,7 +44,7 @@ This extension brings a long-requested feature (see JetBrains request [JT-38623]
 
 ## Installation
 
-1. Get the extension from the [Chrome Web Store](https://chromewebstore.google.com/detail/...).
+1. Get the extension from the [Chrome Web Store](https://chromewebstore.google.com/detail/youtrack-quick-filters-ex/linjbghekknkhpibmhkblkodpebdfiki).
 2. Open any Agile board in YouTrack.
 3. Start adding, combining, exporting, and importing your own quick filters.
 
